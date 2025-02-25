@@ -3,7 +3,7 @@
 Chat with top AI models and earn Mira Points.
 
 ## 🖥 Website Here:
-➡️ [Klok App](https://klokapp.ai?referral_code=RTUFNMZR)
+➡️ <a href="https://klokapp.ai?referral_code=RTUFNMZR" target="_blank" rel="noopener noreferrer">Klok App</a>
 
 ## Features:
 - ✦ Sign up with Email
@@ -41,4 +41,4 @@ python3 run.py
 CTRL A+D
 
 Done Tinggal Turu dan Ngopi disini
-[kopi cendol](https://trakteer.id/enyongbae/tip?open=true)
+<a href="https://trakteer.id/enyongbae/tip?open=true" target="_blank" rel="noopener noreferrer">kopi cendol</a>
