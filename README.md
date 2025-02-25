@@ -23,7 +23,7 @@ cd whklok
 ```
 pip install pyfiglet
 ```
-3. Cek Webnya dan Copy Perintah berikut
+3. Cek Webnya dan klik kanan inspect lalu copy perintah berikut di console
 ```
 localStorage.getItem('session_token');
 ```
