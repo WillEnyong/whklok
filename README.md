@@ -23,11 +23,14 @@ cd whklok
 ```
 pip install pyfiglet
 ```
-3. Cek Webnya dan klik kanan inspect lalu copy perintah berikut di console
+3. Cek Webnya dan klik kanan inspect lalu copy perintah berikut di console dan untuk user id cari dibagian network di kolom filter paste ini
+```
+https://api1-pp.klokapp.ai/v1/me
+```
 ```
 localStorage.getItem('session_token');
 ```
-4. Paste di file account.txt  
+4. Paste di file account.txt sesuai format userid|sessiontokennya
    CTRL+SHIFT+V
 5. Berjalan di Screen
 ```
