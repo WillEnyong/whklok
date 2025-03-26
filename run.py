@@ -1,127 +1,106 @@
 import requests
-import time
 import json
-import sys
+import time
+import uuid
+import os
+import random
 from datetime import datetime
-from pyfiglet import figlet_format
 
-API_URL = "https://api1-pp.klokapp.ai/v1/chat"
+# 🎨 Menampilkan logo
+def print_logo():
+    print("\033[1;36m")  # Warna cyan
+    print("╔══════════════════════════════╗")
+    print("║      🤖  🆆 🅷 🆃 🅴 🅲 🅷  🤖     ║")
+    print("║  Join 📢 t.me/airdropkerti   ║")
+    print("╚══════════════════════════════╝")
+    print("\033[0m")  # Reset warna
 
-# Menampilkan logo
-print("\033[1;36m")  # Warna cyan
-print("╔══════════════════════════════╗")
-print("║      🤖  🆆 🅷 🆃 🅴 🅲 🅷  🤖     ║")
-print("║  Join 📢 t.me/airdropkerti   ║")
-print("╚══════════════════════════════╝")
-print("\033[0m")  # Reset warna
+# 🔹 Baca user ID dan session token dari account.txt
+def get_credentials():
+    if not os.path.exists("account.txt"):
+        print("❌ Error: File 'account.txt' tidak ditemukan!")
+        exit()
 
-# Load akun dari file account.txt
-def load_accounts():
-    with open("account.txt", "r") as f:
-        return [line.strip() for line in f.readlines() if line.strip()]
+    with open("account.txt", "r") as file:
+        data = file.read().strip().split("|")
+        if len(data) != 2:
+            print("❌ Error: Format 'account.txt' tidak valid! (Gunakan format: user_id|session_token)")
+            exit()
+        return data[0], data[1]  # user_id, session_token
 
-# Load pesan dari file pesan.txt
-def load_messages():
-    with open("pesan.txt", "r") as f:
-        return [line.strip() for line in f.readlines() if line.strip()]
+# 🔹 Baca daftar pesan dari pesan.txt (setiap baris = 1 pesan)
+def get_messages():
+    if not os.path.exists("pesan.txt"):
+        print("❌ Error: File 'pesan.txt' tidak ditemukan!")
+        exit()
 
-# Memilih model AI sekali untuk semua akun
-def choose_model():
-    models = {
-        "1": "llama-3.3-70b-instruct",
-        "2": "deepseek-r1",
-        "3": "gpt-4o-mini"
+    with open("pesan.txt", "r", encoding="utf-8") as file:
+        messages = [line.strip() for line in file.readlines() if line.strip()]
+    
+    if not messages:
+        print("❌ Error: File 'pesan.txt' kosong!")
+        exit()
+    
+    return messages
+
+# 🔹 Kirim request ke API
+def send_request(message, user_id, session_token):
+    url = "https://api1-pp.klokapp.ai/v1/chat"
+
+    headers = {
+        "Content-Type": "application/json",
+        "x-session-token": session_token,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"
     }
-    print("\nPilih Model AI:")
-    for k, v in models.items():
-        print(f"{k}. {v}")
 
-    while True:
-        choice = input("\nMasukkan nomor model yang dipilih: ")
-        if choice in models:
-            print(f"\n✅ Model yang dipilih: {models[choice]}\n")
-            return models[choice]
-        else:
-            print("❌ Pilihan tidak valid. Coba lagi.")
-
-# Mengirim request dengan format yang sesuai
-def send_request(messages, headers, model):
     payload = {
-        "id": "auto-generated",
-        "title": "**🤖 Automated Chat**",
-        "created_at": datetime.utcnow().isoformat() + "Z",
+        "id": str(uuid.uuid4()),  # UUID baru untuk setiap request
         "language": "english",
-        "messages": messages,
-        "model": model,
+        "user": user_id,  # User ID dimasukkan ke payload
+        "messages": [{"role": "user", "content": message}],
+        "model": "llama-3.3-70b-instruct",
         "sources": []
     }
 
     try:
-        response = requests.post(API_URL, json=payload, headers=headers, stream=True)
+        response = requests.post(url, headers=headers, json=payload)
+        print(f"🔍 Debug: Status Code = {response.status_code}")
+
         if response.status_code == 200:
-            print("\n✅ AI Response:")
-            sys.stdout.flush()
-
-            for line in response.iter_lines():
-                if line:
-                    decoded_line = line.decode("utf-8")
-                    sys.stdout.write(decoded_line + " ")
-                    sys.stdout.flush()
-            print("\n✅ Chat Success\n")
-            return True
+            try:
+                json_response = response.json()
+                print(f"✅ Response: {json.dumps(json_response, indent=2)}\n")
+            except json.JSONDecodeError:
+                print(f"⚠️  Respon: {response.text}\n")
         else:
-            print(f"⚠️ API Error {response.status_code}: {response.text}")
-            return False
+            print(f"⚠️ Respon Error {response.status_code}: {response.text}\n")
+
     except Exception as e:
-        print(f"⚠️ Request Error: {e}")
-        return False
+        print(f"❌ Request failed: {e}\n")
 
-# Menjalankan auto chat untuk satu akun
-def run_auto_chat(session_token, model_choice, messages):
-    headers = {
-        "x-session-token": session_token,
-        "Content-Type": "application/json"
-    }
-    
-    print("\n🔑 Menggunakan akun baru...\n")
-    print("🚀 Memulai auto chat...\n")
+# 🔹 Jalankan auto-chat setiap hari
+def run_auto_chat():
+    print_logo()  # Tampilkan logo
+    user_id, session_token = get_credentials()
+    messages = get_messages()
 
-    conversation = []
-    for i, message in enumerate(messages, 1):
-        print(f"📩 Mengirim pesan {i}/{len(messages)}: {message}")
+    while True:  # Loop terus-menerus agar jalan setiap hari
+        print("\n📅 Hari baru dimulai! Mengirim 10 pesan...\n")
 
-        conversation.append({"role": "user", "content": message})
+        # Pilih 10 pesan secara random setiap hari
+        selected_messages = random.sample(messages, min(10, len(messages)))
 
-        success = send_request(conversation, headers, model_choice)
+        for i, message in enumerate(selected_messages, start=1):
+            print(f"📩 Mengirim pesan {i}/10: {message}")
+            send_request(message, user_id, session_token)
 
-        if not success:
-            print("⏩ Melewati pesan ini...\n")
-            continue
+            if i < len(selected_messages):
+                print("⏳ Menunggu 1 menit sebelum mengirim pesan berikutnya...\n")
+                time.sleep(60)  # Jeda 1 menit antar pesan
 
-        # Countdown sebelum pesan berikutnya
-        for j in range(15, 0, -1):
-            sys.stdout.write(f"\r⏳ Menunggu {j} detik... ")
-            sys.stdout.flush()
-            time.sleep(1)
-        print("\n")
+        print("⏳ Menunggu 24 jam sebelum mengirim pesan lagi...\n")
+        time.sleep(86400)  # Jeda 24 jam sebelum hari berikutnya
 
-# Menjalankan semua akun
-def run_all():
-    accounts = load_accounts()
-    messages = load_messages()
-    model_choice = choose_model()
-    
-    while True:
-        for session_token in accounts:
-            run_auto_chat(session_token, model_choice, messages)
-
-        # Menunggu 24 jam sebelum menjalankan ulang
-        print(figlet_format("WAITING 24 H TO RUNNING AGAIN", font="slant"))
-        for remaining in range(86400, 0, -1):
-            sys.stdout.write(f"\r⏳ Menunggu {remaining//3600} jam {remaining%3600//60} menit {remaining%60} detik...")
-            sys.stdout.flush()
-            time.sleep(1)
-        print("\n🔄 Memulai ulang...\n")
-
+# 🔹 Jalankan skrip
 if __name__ == "__main__":
-    run_all()
+    run_auto_chat()
